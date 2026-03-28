@@ -2,6 +2,7 @@ langchain==0.2.16
 langchain-core==0.2.38
 langchain-community==0.2.16
 langchain-openai==0.1.7
+langchain-experimental==0.0.62
 
 langchain-huggingface==0.0.3
 sentence-transformers==2.7.0
@@ -9,6 +10,7 @@ transformers==4.41.2
 
 chromadb==0.4.24
 langchain-chroma==0.1.2
+rank-bm25==0.2.2
 
 pypdf==4.2.0
 
