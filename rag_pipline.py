@@ -10,6 +10,11 @@ from langchain.text_splitter import CharacterTextSplitter
 from langchain_experimental.text_splitter import SemanticChunker
 from langchain_community.retrievers import BM25Retriever
 from langchain.retrievers import EnsembleRetriever
+from ragas import evaluate
+from ragas.metrics import faithfulness, answer_relevancy, context_recall
+from ragas.llms import LangchainLLMWrapper
+from ragas.embeddings import LangchainEmbeddingsWrapper
+from datasets import Dataset
 import time
 
 #################
@@ -230,6 +235,154 @@ def question_answer(query,retriever,llm):
                           )
     return response.content
 
+##########################
+#                        #
+#  Rag Evalutions        #
+#                        #
+##########################
+
+def create_test_dataset():
+    test_data = [
+        {
+            "question": "What is the total marks of Mir Ikramullah Raesani?",
+            "ground_truth": "Mir Ikramullah Raesani obtained 99 marks out of 150"
+        },
+        {
+            "question": "What grade did Laraib Fatima get?",
+            "ground_truth": "Laraib Fatima got grade A with 120 marks out of 150"
+        },
+        {
+            "question": "Who is the instructor of this course?",
+            "ground_truth": "The instructor is Dr. Adil Aslam Mir"
+        },
+        {
+            "question": "How many students are in this class?",
+            "ground_truth": "There are 48 students in this class"
+        },
+        {
+            "question": "Which semester is this result from?",
+            "ground_truth": "This is semester 7 Fall 2025"
+        },
+    ]
+    print(f"Test dataset ready - {len(test_data)} Questions")
+    return test_data
+
+#########################
+#                       #
+# Run Rag on test_se    #
+#                       #
+#########################
+
+def run_rag_on_testset(test_data,retriever,llm):
+    print("\n"+"="*50)
+    print('RUNNING RAG ON TEST QUESTIONS')
+    print("="*50)
+
+
+    results=[]
+    for i , item in enumerate(test_data):
+        question = item["question"]
+        ground_truth = item['ground_truth']
+
+        print(f'\n[{i+1}/{len(test_data)}] {question}')
+
+        # Retrieve Chunks
+        docs = retriever.invoke(question)
+        #Collect chunk texts as list
+        contexts = [doc.page_content for doc in docs]
+
+        #generate answer
+        context_text = '\n\n'.join(contexts)
+        system_prompt = SYSTEM_PROMPT_TEMPLATE.format(context=context_text)
+        response = llm.invoke([
+            SystemMessage(system_prompt),
+            HumanMessage(question)
+        ])
+        answer = response.content
+        print(f"     -> {answer[:80]}.....")
+
+        results.append(
+            {
+                'question':question,
+                'answer': answer,
+                'contexts': contexts,
+                'ground_truth': ground_truth
+            }
+        )
+        time.sleep(20)
+
+    print(f"\n Done - {len(results)} questions processes")
+    return results    
+
+#########################
+#                       #
+# Run Rags on evalution #
+#                       #
+#########################
+def run_ragas_evalution(results, llm, embeddings):
+    print("\n" + "="*50)
+    print("Calculation Ragas Scores")
+    print("="*50)
+
+    dataset_dict = {
+        "question"    : [r["question"]     for r in results],
+        "answer"      : [r["answer"]       for r in results],
+        "contexts"    : [r["contexts"]     for r in results],
+        "ground_truth": [r["ground_truth"] for r in results],
+    }
+
+    print("\nVerifying dataset columns:")
+    for key, val in dataset_dict.items():
+        print(f"  {key} → {type(val[0])} → sample: {str(val[0])[:60]}")
+
+    dataset = Dataset.from_dict(dataset_dict)
+
+    ragas_llm        = LangchainLLMWrapper(llm)
+    ragas_embeddings = LangchainEmbeddingsWrapper(embeddings)
+
+    print("\nRunning Evaluation - takes 2-3 minutes ....")
+
+    scores = evaluate(
+        dataset         = dataset,
+        metrics         = [faithfulness, answer_relevancy, context_recall],
+        llm             = ragas_llm,
+        embeddings      = ragas_embeddings,
+        raise_exceptions= False,  # ← Change 1: don't crash on timeout
+    )
+
+    return scores
+
+#############################
+#                           #
+#  Print_evalution_results  #
+#                           #
+#############################
+def print_evalutions_results(scores):
+    df = scores.to_pandas()
+
+    print('\n' + '='*50)
+    print('RAGAS Results')
+    print('='*50)
+
+    avg_f = df['faithfulness'].mean()
+    avg_r = df['answer_releveancy'].mean()
+    avg_c = df['context_recall'].mean()
+
+
+    print(f"\n  Faithfulness     : {avg_f:.3f}  {'✅' if avg_f > 0.8 else '⚠️'}")
+    print(f"  Answer Relevancy : {avg_r:.3f}  {'✅' if avg_r > 0.8 else '⚠️'}")
+    print(f"  Context Recall   : {avg_c:.3f}  {'✅' if avg_c > 0.75 else '⚠️'}")
+
+    print('\n Per Questions:')
+    print(f" {'#':<4}{'Question':<40}{'Faith':<8}{'Relev':<8}{'Recall'}")
+    print(" "+"-"*65)
+    for i , row in df.iterrows():
+        q = row['question'][:37] + '.....'
+        print(f" {i+1:<4}{q:<40}{row['faithfulness']:.2f} {row['answer_relevancy']:.2f}  {row['context_recall']:.2f}")
+
+    df.to_csv('range_results.csv',index=False)
+    print('\n Saves to rages_results.csv')
+    return df
 
 ##########################
 #                        #
@@ -280,6 +433,11 @@ if __name__ == '__main__':
     print('hybrid serach ready')
     # Step 7: LLM
     llm = create_llm()
+
+    test_data = create_test_dataset()
+    rag_results = run_rag_on_testset(test_data,retriever,llm)
+    scores = run_ragas_evalution(rag_results,llm,embeddings)
+    df = print_evalutions_results(scores)
 
     # Step 8: Ask questions
     while True:
