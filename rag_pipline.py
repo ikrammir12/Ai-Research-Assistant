@@ -365,7 +365,7 @@ def print_evalutions_results(scores):
     print('='*50)
 
     avg_f = df['faithfulness'].mean()
-    avg_r = df['answer_releveancy'].mean()
+    avg_r = df['answer_relevancy'].mean()
     avg_c = df['context_recall'].mean()
 
 
