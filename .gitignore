@@ -7,3 +7,8 @@ Modern Application Design and Development (CS-4103)_B.pdf
 vector.db
 
 chroma_db
+
+echo "chroma_db_recursive/" >> .gitignore
+echo "chroma_db_gradio/" >> .gitignore
+echo "*.bin" >> .gitignore
+echo "*.sqlite3" >> .gitignore
