@@ -2,6 +2,8 @@ venv
 
 .env
 
+*.csv
+
 Modern Application Design and Development (CS-4103)_B.pdf
 
 vector.db
