@@ -21,12 +21,12 @@ def create_test_dataset():
             "ground_truth": "Mir Ikramullah Raesani obtained 99 marks out of 150"
         },
         {
-            "question"    : "What grade did Laraib Fatima get?",
-            "ground_truth": "Laraib Fatima got grade A with 120 marks out of 150"
+            "question"    : "What grade did Fatima Abbasi get?",
+            "ground_truth": "Fatima Abbasi got grade A with 120 marks out of 150"
         },
         {
-            "question"    : "Who is the instructor of this course?",
-            "ground_truth": "The instructor is Dr. Adil Aslam Mir"
+            "question"    : "What grade Hifza Ansar get??",
+            "ground_truth": "Hifza Ansar got grade B with 110 marks out of 150"
         },
         {
             "question"    : "How many students are in this class?",

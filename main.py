@@ -80,18 +80,12 @@ if __name__ == '__main__':
     df          = print_evaluation_results(scores)
 
     # Step 8 — QA loop
-    while True:
-        query = input("\nAsk a question (or type 'exit'): ")
-        if query.lower() == 'exit':
-            break
-        answer = question_answer(query, retriever, llm)
-        print('\nAnswer:\n', answer)
+def answer(question, history):
+    return question_answer(question, retriever, llm)
 
+gr.ChatInterface(
+    fn=answer,
+    title="📚 AI Research Assistant",
+    description="Upload context is pre-loaded. Ask questions about the document."
+).launch(share=True)
 
-iface = gr.Interface(
-    fn=lambda query: question_answer(query, retriever, llm),
-    inputs=gr.Textbox(label="Ask a question"),
-    outputs=gr.Textbox(label="Answer"),
-    title="AI Research Assistant"
-)
-iface.launch()        
