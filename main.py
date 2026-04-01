@@ -12,6 +12,14 @@ from app.evaluation import (
 )
 from langchain_core.messages import HumanMessage, SystemMessage
 import os
+import gradio as gr
+import warnings
+import os
+import logging
+
+warnings.filterwarnings("ignore")
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+logging.getLogger("chromadb").setLevel(logging.ERROR)
 
 load_dotenv()
 
@@ -78,3 +86,12 @@ if __name__ == '__main__':
             break
         answer = question_answer(query, retriever, llm)
         print('\nAnswer:\n', answer)
+
+
+iface = gr.Interface(
+    fn=lambda query: question_answer(query, retriever, llm),
+    inputs=gr.Textbox(label="Ask a question"),
+    outputs=gr.Textbox(label="Answer"),
+    title="AI Research Assistant"
+)
+iface.launch()        
