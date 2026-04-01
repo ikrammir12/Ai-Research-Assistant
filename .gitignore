@@ -16,3 +16,5 @@ echo "chroma_db_recursive/" >> .gitignore
 echo "chroma_db_gradio/" >> .gitignore
 echo "*.bin" >> .gitignore
 echo "*.sqlite3" >> .gitignore
+
+.gradio/

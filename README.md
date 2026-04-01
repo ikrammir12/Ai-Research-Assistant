@@ -1,14 +1,3 @@
----
-title: AI Research Assistant
-emoji: 📚
-colorFrom: blue
-colorTo: green
-sdk: gradio
-sdk_version: "4.0.0"
-app_file: app.py
-pinned: false
----
-
 # 📚 AI Research Assistant
 
 A production-grade RAG pipeline for querying PDF documents using 
